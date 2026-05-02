@@ -30,10 +30,24 @@ jobs:
           cd scripts
           npm install
 
+      # ✅ Step 1: Generate wallet (tidak tampil di log)
       - name: Step 1 - Create new Ethereum Identity
-        run: node scripts/createNewEthereumIdentity.js
+        id: create_identity
+        run: |
+          OUTPUT=$(node scripts/createNewEthereumIdentity.js)
+          echo "WALLET_JSON<<EOF" >> $GITHUB_ENV
+          echo "$OUTPUT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
+      # ✅ Step 2: Ambil private key dari JSON
+      - name: Extract Private Key
+        run: |
+          PK=$(echo "$WALLET_JSON" | jq -r '.privateKey')
+          echo "PRIVATE_KEY=$PK" >> $GITHUB_ENV
+
+      # ✅ Step 3: Pakai private key
       - name: Step 2 - Link Human to Agent
         run: |
           node scripts/manualLinkHumanToAgent.js \
-          --challenge "{\"name\": \"boca\", \"description\": \"boca AI Agent\"}"
+          --private-key $PRIVATE_KEY \
+          --challenge "{\"name\": \"${{ boca }}\", \"description\": \"${{ boca_description }}\"}"
